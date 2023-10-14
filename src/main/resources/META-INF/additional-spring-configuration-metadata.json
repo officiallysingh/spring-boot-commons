@@ -1,0 +1,23 @@
+{
+	"properties": [
+		{
+			"name": "application.security.enabled",
+			"type": "java.lang.Boolean",
+			"defaultValue": "false",
+			"description": "Whether or not to enable security"
+		},
+		{
+			"name": "application.security.bypass-actuators",
+			"type": "java.lang.Boolean",
+			"defaultValue": "true",
+			"description": "Whether or not to bypass security for Actuator endpoints"
+		},
+		{
+			"name": "application.security.unsecured-uris",
+			"type": "java.util.List<java.lang.String>",
+			"defaultValue": "[]",
+			"description": "List of URI patterns to be excluded from security i.e. making them unsecured"
+		}
+	]
+}
+
