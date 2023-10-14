@@ -1,5 +1,5 @@
-com.gangatourism.common.spring.boot.config.CommonComponentsAutoConfiguration
-com.gangatourism.common.spring.boot.config.security.SecurityConfiguration
-com.gangatourism.common.spring.boot.config.security.ReactiveSecurityConfiguration
-com.gangatourism.common.spring.boot.config.web.WebConfigurer
-com.gangatourism.common.spring.boot.config.web.ReactiveWebConfigurer
+com.ksoot.common.spring.boot.config.GeneralAutoConfiguration
+com.ksoot.common.spring.boot.config.security.SecurityConfiguration
+com.ksoot.common.spring.boot.config.security.ReactiveSecurityConfiguration
+com.ksoot.common.spring.boot.config.web.WebConfigurer
+com.ksoot.common.spring.boot.config.web.ReactiveWebConfigurer

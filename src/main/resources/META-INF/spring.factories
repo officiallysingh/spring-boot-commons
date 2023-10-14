@@ -1,1 +1,1 @@
-org.springframework.boot.env.EnvironmentPostProcessor=com.gangatourism.common.spring.boot.DefaultPropertiesEnvironmentPostProcessor
+org.springframework.boot.env.EnvironmentPostProcessor=com.ksoot.common.spring.boot.DefaultPropertiesEnvironmentPostProcessor
