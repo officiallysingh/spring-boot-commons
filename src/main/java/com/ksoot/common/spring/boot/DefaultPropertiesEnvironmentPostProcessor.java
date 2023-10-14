@@ -8,7 +8,6 @@ import java.util.Properties;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MutablePropertySources;
@@ -22,7 +21,7 @@ import org.springframework.util.ClassUtils;
  * @author Rajveer Singh
  */
 @Log4j2
-@Order(Ordered.LOWEST_PRECEDENCE)
+@Order
 public class DefaultPropertiesEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
   private static final String DEFAULT_PROPERTIES = "config/defaults.yml";
