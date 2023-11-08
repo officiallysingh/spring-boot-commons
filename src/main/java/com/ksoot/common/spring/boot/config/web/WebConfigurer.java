@@ -7,7 +7,7 @@ import com.ksoot.common.spring.boot.config.web.actuator.ActuatorUtils;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import java.util.List;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -26,7 +26,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  *
  * @author Rajveer Singh
  */
-@Log4j2
+@Slf4j
 @Configuration(value = BeanName.WEB_CONFIGURER_BEAN_NAME)
 @AutoConfigureAfter(value = {GeneralAutoConfiguration.class})
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
