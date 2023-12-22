@@ -17,6 +17,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -30,7 +31,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 @EnableConfigurationProperties(value = {SecurityProperties.class, ActuatorEndpointProperties.class})
 @ConditionalOnProperty(prefix = "application.security", name = "enabled", havingValue = "true")
 @ConditionalOnClass(
-    value = {WebSecurityConfiguration.class, JwtAuthenticationConverter.class, JwtDecoder.class})
+        value = {WebSecurityConfiguration.class, JwtAuthenticationConverter.class, JwtDecoder.class})
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 // @ConditionalOnMissingBean(name = SECURITY_CONFIGURATION_BEAN_NAME)
 @AutoConfigureBefore(SecurityAutoConfiguration.class)
@@ -40,67 +41,69 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 // @PreAuthorize, not required as of now
 class SecurityConfiguration {
 
-  private final AuthenticationEntryPoint authenticationEntryPoint;
+    private final AuthenticationEntryPoint authenticationEntryPoint;
 
-  private final AccessDeniedHandler accessDeniedHandler;
+    private final AccessDeniedHandler accessDeniedHandler;
 
-  private final ActuatorEndpointProperties actuatorEndpointProperties;
+    private final ActuatorEndpointProperties actuatorEndpointProperties;
 
-  private final SecurityProperties securityProperties;
+    private final SecurityProperties securityProperties;
 
-  public SecurityConfiguration(
-      @Nullable final AuthenticationEntryPoint authenticationEntryPoint,
-      @Nullable final AccessDeniedHandler accessDeniedHandler,
-      @Nullable final ActuatorEndpointProperties actuatorEndpointProperties,
-      final SecurityProperties securityProperties) {
-    this.authenticationEntryPoint = authenticationEntryPoint;
-    this.accessDeniedHandler = accessDeniedHandler;
-    this.actuatorEndpointProperties = actuatorEndpointProperties;
-    this.securityProperties = securityProperties;
-  }
-
-  @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    // @formatter:off
-    http.csrf()
-        .disable()
-        .authorizeHttpRequests(
-            (requests) ->
-                requests
-                    .requestMatchers(
-                        "/swagger-resources/**", "/swagger-ui/**", "/v2/api-docs", "/webjars/**")
-                    .permitAll()
-                    .requestMatchers(
-                        //						this.securityProperties.isBypassActuators()
-                        //						?
-                        ActuatorUtils.getPaths(this.actuatorEndpointProperties)
-                        //						: RequestMatcher.MatchResult.notMatch()
-                        )
-                    .permitAll()
-                    .requestMatchers(this.securityProperties.getUnsecuredUris())
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated())
-        .oauth2ResourceServer()
-        .jwt()
-        .jwtAuthenticationConverter(this.jwtAuthenticationConverter())
-        .decoder(new JwtStringDecoder());
-
-    if (this.authenticationEntryPoint != null) {
-      http.exceptionHandling().authenticationEntryPoint(this.authenticationEntryPoint);
+    public SecurityConfiguration(
+            @Nullable final AuthenticationEntryPoint authenticationEntryPoint,
+            @Nullable final AccessDeniedHandler accessDeniedHandler,
+            @Nullable final ActuatorEndpointProperties actuatorEndpointProperties,
+            final SecurityProperties securityProperties) {
+        this.authenticationEntryPoint = authenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
+        this.actuatorEndpointProperties = actuatorEndpointProperties;
+        this.securityProperties = securityProperties;
     }
-    if (this.accessDeniedHandler != null) {
-      http.exceptionHandling().accessDeniedHandler(this.accessDeniedHandler);
-    }
-    // @formatter:on
-    return http.build();
-  }
 
-  private JwtAuthenticationConverter jwtAuthenticationConverter() {
-    JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-    jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
-        JwtUtils.jwtGrantedAuthoritiesConverter());
-    jwtAuthenticationConverter.setPrincipalClaimName(JwtUtils.PRINCIPLE_NAME_CLAIM_ID);
-    return jwtAuthenticationConverter;
-  }
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(
+                        (requests) ->
+                                requests
+                                        .requestMatchers(
+                                                "/swagger-resources/**", "/swagger-ui/**", "/v2/api-docs", "/webjars/**")
+                                        .permitAll()
+                                        .requestMatchers(
+                                                //						this.securityProperties.isBypassActuators()
+                                                //						?
+                                                ActuatorUtils.getPaths(this.actuatorEndpointProperties)
+                                                //						: RequestMatcher.MatchResult.notMatch()
+                                        )
+                                        .permitAll()
+                                        .requestMatchers(this.securityProperties.getUnsecuredUris())
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated())
+                .oauth2ResourceServer(
+                        resourceServerCustomizer ->
+                                resourceServerCustomizer.jwt(
+                                        jwtCustomizer ->
+                                                jwtCustomizer
+                                                        .jwtAuthenticationConverter(this.jwtAuthenticationConverter())
+                                                        .decoder(new JwtStringDecoder())));
+        if (this.authenticationEntryPoint != null) {
+            http.exceptionHandling(
+                    exceptionHandling ->
+                            exceptionHandling.authenticationEntryPoint(this.authenticationEntryPoint));
+        }
+        if (this.accessDeniedHandler != null) {
+            http.exceptionHandling(
+                    exceptionHandling -> exceptionHandling.accessDeniedHandler(this.accessDeniedHandler));
+        }
+        return http.build();
+    }
+
+    private JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
+                JwtUtils.jwtGrantedAuthoritiesConverter());
+        jwtAuthenticationConverter.setPrincipalClaimName(JwtUtils.PRINCIPLE_NAME_CLAIM_ID);
+        return jwtAuthenticationConverter;
+    }
 }

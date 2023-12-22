@@ -33,62 +33,61 @@ import org.springframework.security.web.server.authorization.ServerAccessDeniedH
 @EnableReactiveMethodSecurity // Allow method annotations like @PreAuthorize
 class ReactiveSecurityConfiguration {
 
-  private final ServerAuthenticationEntryPoint authenticationEntryPoint;
+    private final ServerAuthenticationEntryPoint authenticationEntryPoint;
 
-  private final ServerAccessDeniedHandler accessDeniedHandler;
+    private final ServerAccessDeniedHandler accessDeniedHandler;
 
-  private final ActuatorEndpointProperties actuatorEndpointProperties;
+    private final ActuatorEndpointProperties actuatorEndpointProperties;
 
-  private final SecurityProperties securityProperties;
+    private final SecurityProperties securityProperties;
 
-  public ReactiveSecurityConfiguration(
-      @Nullable final ServerAuthenticationEntryPoint authenticationEntryPoint,
-      @Nullable final ServerAccessDeniedHandler accessDeniedHandler,
-      @Nullable final ActuatorEndpointProperties actuatorEndpointProperties,
-      final SecurityProperties securityProperties) {
-    this.authenticationEntryPoint = authenticationEntryPoint;
-    this.accessDeniedHandler = accessDeniedHandler;
-    this.actuatorEndpointProperties = actuatorEndpointProperties;
-    this.securityProperties = securityProperties;
-  }
+    public ReactiveSecurityConfiguration(
+            @Nullable final ServerAuthenticationEntryPoint authenticationEntryPoint,
+            @Nullable final ServerAccessDeniedHandler accessDeniedHandler,
+            @Nullable final ActuatorEndpointProperties actuatorEndpointProperties,
+            final SecurityProperties securityProperties) {
+        this.authenticationEntryPoint = authenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
+        this.actuatorEndpointProperties = actuatorEndpointProperties;
+        this.securityProperties = securityProperties;
+    }
 
-  @Bean
-  SecurityWebFilterChain securityWebFilterChain(final ServerHttpSecurity http) {
-    // @formatter:off
-    http.csrf()
-        .disable()
-        .authorizeExchange()
-        .pathMatchers("/swagger-resources/**", "/swagger-ui/**", "/v2/api-docs", "/webjars/**")
-        .permitAll()
-        .pathMatchers(ActuatorUtils.getPaths(this.actuatorEndpointProperties))
-        .permitAll()
-        .pathMatchers(this.securityProperties.getUnsecuredUris())
-        .permitAll()
-        .anyExchange()
-        .authenticated()
-        .and()
-        .oauth2ResourceServer()
-        .jwt()
-        .jwtAuthenticationConverter(this.jwtAuthenticationConverter())
-        .jwtDecoder(new ReactiveJwtStringDecoder());
+    @Bean
+    SecurityWebFilterChain securityWebFilterChain(final ServerHttpSecurity http) {
+        // @formatter:off
+    http.csrf(ServerHttpSecurity.CsrfSpec::disable)
+            .authorizeExchange((exchanges) -> exchanges
+                    .pathMatchers("/swagger-resources/**", "/swagger-ui/**", "/swagger-ui.*", "/v3/api-docs", "/v3/api-docs/**", "/webjars/**").permitAll()
+                    .pathMatchers(ActuatorUtils.getPaths(this.actuatorEndpointProperties)).permitAll()
+                    .anyExchange().authenticated()
+            ).oauth2ResourceServer(
+                    resourceServerCustomizer ->
+                            resourceServerCustomizer.jwt(
+                                    jwtCustomizer ->
+                                            jwtCustomizer
+                                                    .jwtAuthenticationConverter(this.jwtAuthenticationConverter())
+                                                    .jwtDecoder(new ReactiveJwtStringDecoder())));
 
     if (this.authenticationEntryPoint != null) {
-      http.exceptionHandling().authenticationEntryPoint(this.authenticationEntryPoint);
+      http.exceptionHandling(
+              exceptionHandling ->
+                      exceptionHandling.authenticationEntryPoint(this.authenticationEntryPoint));
     }
     if (this.accessDeniedHandler != null) {
-      http.exceptionHandling().accessDeniedHandler(this.accessDeniedHandler);
+      http.exceptionHandling(
+              exceptionHandling -> exceptionHandling.accessDeniedHandler(this.accessDeniedHandler));
     }
     // @formatter:on
-    return http.build();
-  }
+        return http.build();
+    }
 
-  private ReactiveJwtAuthenticationConverter jwtAuthenticationConverter() {
-    ReactiveJwtAuthenticationConverter jwtAuthenticationConverter =
-        new ReactiveJwtAuthenticationConverter();
-    jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
-        new ReactiveJwtGrantedAuthoritiesConverterAdapter(
-            JwtUtils.jwtGrantedAuthoritiesConverter()));
-    // jwtAuthenticationConverter.setPrincipalClaimName(JwtUtils.PRINCIPLE_NAME_CLAIM_ID);
-    return jwtAuthenticationConverter;
-  }
+    private ReactiveJwtAuthenticationConverter jwtAuthenticationConverter() {
+        ReactiveJwtAuthenticationConverter jwtAuthenticationConverter =
+                new ReactiveJwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
+                new ReactiveJwtGrantedAuthoritiesConverterAdapter(
+                        JwtUtils.jwtGrantedAuthoritiesConverter()));
+        // jwtAuthenticationConverter.setPrincipalClaimName(JwtUtils.PRINCIPLE_NAME_CLAIM_ID);
+        return jwtAuthenticationConverter;
+    }
 }
